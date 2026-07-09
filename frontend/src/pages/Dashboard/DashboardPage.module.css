@@ -1,0 +1,34 @@
+.layout {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 1.35rem;
+}
+
+.card {
+  width: min(100%, 860px);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(191, 219, 254, 0.8);
+  border-radius: 28px;
+  box-shadow: var(--shadow-lg);
+  padding: 1.6rem;
+}
+
+.kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--blue-600);
+  font-weight: 800;
+}
+
+.card h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.description {
+  margin: 0.75rem 0 0;
+  color: var(--slate-700);
+}
