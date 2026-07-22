@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import Button from '../../components/Button/Button';
 import AuthLayout from '../../components/auth/AuthLayout';
@@ -20,6 +20,7 @@ const roleOptions = [
 ];
 
 export default function SignupPage({ onSignup }) {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -73,8 +74,8 @@ export default function SignupPage({ onSignup }) {
 
     try {
       setIsSubmitting(true);
+      setSubmitMessage('');
 
-      // The selected role controls the first screen after signup.
       if (onSignup) {
         await onSignup({
           fullName: formData.fullName.trim(),
@@ -82,10 +83,13 @@ export default function SignupPage({ onSignup }) {
           password: formData.password,
           role: formData.role,
         });
+
         return;
       }
 
-      setSubmitMessage('Account created successfully. Please log in to continue.');
+      navigate(formData.role === 'athlete' ? '/athlete-profile' : '/dashboard', { replace: true });
+    } catch (error) {
+      setSubmitMessage(error.message || 'Unable to create account. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

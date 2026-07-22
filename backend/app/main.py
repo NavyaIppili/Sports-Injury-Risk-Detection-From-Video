@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes.auth import router as auth_router
 from app.routes.health import router as health_router
 from app.routes.profile import router as profile_router
+from app.routes.videos import router as videos_router
+from app.routes.pose import router as pose_router
+from app.database.database import create_tables
 
 app = FastAPI(
     title='Sports Injury Risk Detection API',
@@ -22,3 +25,10 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(auth_router, prefix='/api/v1')
 app.include_router(profile_router, prefix='/api/v1')
+app.include_router(videos_router, prefix='/api/v1')
+app.include_router(pose_router)
+
+
+@app.on_event('startup')
+def on_startup() -> None:
+    create_tables()

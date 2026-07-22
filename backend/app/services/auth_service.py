@@ -33,11 +33,13 @@ def register_account(payload: SignupRequest) -> dict:
 
 
 def validate_login(payload: LoginRequest) -> bool:
-    expected_email = os.getenv('LOGIN_EMAIL', DEFAULT_LOGIN_EMAIL)
-    expected_password = os.getenv('LOGIN_PASSWORD', DEFAULT_LOGIN_PASSWORD)
+    normalized_email = payload.email.lower().strip()
+    normalized_password = payload.password.strip()
+    expected_email = os.getenv('LOGIN_EMAIL', DEFAULT_LOGIN_EMAIL).strip()
+    expected_password = os.getenv('LOGIN_PASSWORD', DEFAULT_LOGIN_PASSWORD).strip()
 
-    if payload.email.lower() == expected_email.lower() and payload.password == expected_password:
+    if normalized_email == expected_email.lower() and normalized_password == expected_password:
         return True
 
-    account = REGISTERED_ACCOUNTS.get(payload.email.lower())
-    return bool(account and account['password'] == payload.password)
+    account = REGISTERED_ACCOUNTS.get(normalized_email)
+    return bool(account and account['password'].strip() == normalized_password)

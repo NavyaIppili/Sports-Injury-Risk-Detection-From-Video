@@ -1,29 +1,26 @@
-# Node
-node_modules/
-frontend/node_modules/
-frontend/dist/
-dist/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
 # Python
 .venv/
-backend/.venv/
-backend/venv/
-backend/__pycache__/
-backend/.pytest_cache/
+venv/
 __pycache__/
 *.pyc
 
+# Database
+*.db
+
 # Environment
-backend/.env
 .env
 
-# OS
-Thumbs.db
-.DS_Store
+# Uploads and generated files
+backend/uploads/
 
-# Build / misc
-coverage/
-*.log
+# Model weights
+*.pt
+
+# Frontend
+node_modules/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db

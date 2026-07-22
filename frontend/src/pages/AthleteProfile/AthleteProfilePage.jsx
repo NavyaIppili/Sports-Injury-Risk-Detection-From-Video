@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Button from '../../components/Button/Button';
 import Input from '../../components/Input/Input';
+import { getAthleteProfile } from '../../services/api';
 import styles from './AthleteProfilePage.module.css';
 
 const genderOptions = [
@@ -20,11 +21,34 @@ const initialFormState = {
   weight: '',
   sport: '',
   playingPosition: '',
-  trainingLoad: '',
+  dominantSide: '',
+  experienceYears: '',
   previousInjuries: '',
 };
 
-export default function AthleteProfilePage({ profileSaved, onSaveProfile, onResetProfile, onCompleteProfile }) {
+const dominantSideOptions = [
+  { value: '', label: 'Select dominant side', disabled: true },
+  { value: 'right', label: 'Right' },
+  { value: 'left', label: 'Left' },
+  { value: 'both', label: 'Both' },
+];
+
+function mapApiProfileToForm(profile) {
+  return {
+    fullName: profile.full_name || '',
+    age: profile.age?.toString() || '',
+    gender: profile.gender || '',
+    height: profile.height || '',
+    weight: profile.weight || '',
+    sport: profile.sport || '',
+    playingPosition: profile.playing_position || '',
+    dominantSide: profile.dominant_side || '',
+    experienceYears: profile.experience_years?.toString() || '',
+    previousInjuries: profile.previous_injuries || '',
+  };
+}
+
+export default function AthleteProfilePage({ userId, profileSaved, onSaveProfile }) {
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
   const [localStatus, setLocalStatus] = useState('');
@@ -37,14 +61,44 @@ export default function AthleteProfilePage({ profileSaved, onSaveProfile, onRese
     }));
   };
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProfile() {
+      if (!userId || !profileSaved) {
+        setFormData(initialFormState);
+        setLocalStatus('');
+        return;
+      }
+
+      try {
+        const profile = await getAthleteProfile(userId);
+        if (!isMounted) return;
+
+        setFormData(mapApiProfileToForm(profile));
+        setLocalStatus('Loaded saved profile. You can update your details below.');
+      } catch (error) {
+        if (!isMounted) return;
+
+        setFormData(initialFormState);
+        setLocalStatus(error.message || 'Unable to load saved profile details.');
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profileSaved, userId]);
+
   const handleReset = () => {
     setFormData(initialFormState);
     setErrors({});
     setLocalStatus('Form reset locally.');
-    onResetProfile();
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const nextErrors = {};
@@ -56,7 +110,8 @@ export default function AthleteProfilePage({ profileSaved, onSaveProfile, onRese
     if (!formData.weight.trim()) nextErrors.weight = 'Weight is required.';
     if (!formData.sport.trim()) nextErrors.sport = 'Sport is required.';
     if (!formData.playingPosition.trim()) nextErrors.playingPosition = 'Playing position is required.';
-    if (!formData.trainingLoad.trim()) nextErrors.trainingLoad = 'Training load is required.';
+    if (!formData.dominantSide.trim()) nextErrors.dominantSide = 'Dominant side is required.';
+    if (!formData.experienceYears.trim()) nextErrors.experienceYears = 'Experience years is required.';
     if (!formData.previousInjuries.trim()) nextErrors.previousInjuries = 'Previous injury history is required.';
 
     setErrors(nextErrors);
@@ -66,10 +121,14 @@ export default function AthleteProfilePage({ profileSaved, onSaveProfile, onRese
       return;
     }
 
-    setLocalStatus('Profile saved locally. Redirecting to the dashboard.');
-    onSaveProfile();
-    if (onCompleteProfile) {
-      onCompleteProfile();
+    try {
+      if (onSaveProfile) {
+        await onSaveProfile(formData, !profileSaved);
+      }
+
+      setLocalStatus(profileSaved ? 'Profile updated successfully.' : 'Profile saved. Redirecting to dashboard...');
+    } catch (error) {
+      setLocalStatus(error.message || 'Unable to save profile. Please try again.');
     }
   };
 
@@ -81,7 +140,7 @@ export default function AthleteProfilePage({ profileSaved, onSaveProfile, onRese
             <p className={styles.sectionLabel}>Athlete Profile</p>
             <h2>Complete the athlete details before future injury analysis.</h2>
           </div>
-          {profileSaved ? <span className={styles.savedBadge}>Saved locally</span> : null}
+          {profileSaved ? <span className={styles.savedBadge}>Saved to database</span> : null}
         </div>
 
         <form className={styles.formCard} onSubmit={handleSubmit} noValidate>
@@ -99,7 +158,8 @@ export default function AthleteProfilePage({ profileSaved, onSaveProfile, onRese
             <Input id="weight" label="Weight" value={formData.weight} onChange={handleChange} placeholder="e.g. 72 kg" error={errors.weight} />
             <Input id="sport" label="Sport" value={formData.sport} onChange={handleChange} placeholder="e.g. Football" error={errors.sport} />
             <Input id="playingPosition" label="Playing Position" value={formData.playingPosition} onChange={handleChange} placeholder="e.g. Defender" error={errors.playingPosition} />
-            <Input id="trainingLoad" label="Weekly Training Load" value={formData.trainingLoad} onChange={handleChange} placeholder="e.g. Medium" error={errors.trainingLoad} />
+            <Input id="dominantSide" label="Dominant Side" as="select" value={formData.dominantSide} onChange={handleChange} error={errors.dominantSide} options={dominantSideOptions} />
+            <Input id="experienceYears" label="Experience Years" type="number" value={formData.experienceYears} onChange={handleChange} placeholder="e.g. 4" error={errors.experienceYears} />
             
             <label className={styles.field} htmlFor="previousInjuries" style={{ gridColumn: 'span 2' }}>
               <span className={styles.label}>Previous Injury History</span>

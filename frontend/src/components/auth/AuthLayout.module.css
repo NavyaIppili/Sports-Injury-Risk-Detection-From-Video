@@ -114,8 +114,9 @@
   border-radius: 14px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, var(--blue-600), var(--blue-500));
-  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.18);
+  background: #ffffff;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 
@@ -127,7 +128,9 @@
 }
 
 .logoImage {
-  mix-blend-mode: multiply;
+  mix-blend-mode: normal;
+  filter: none;
+  opacity: 1;
 }
 
 .projectName {

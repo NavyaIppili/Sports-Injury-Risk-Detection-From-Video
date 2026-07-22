@@ -5,5 +5,6 @@ def build_profile_summary(profile: AthleteProfileCreate) -> dict:
     return {
         'fullName': profile.full_name,
         'sport': profile.sport,
-        'trainingLoad': profile.training_load,
+        'dominantSide': profile.dominant_side,
+        'experienceYears': profile.experience_years,
     }
