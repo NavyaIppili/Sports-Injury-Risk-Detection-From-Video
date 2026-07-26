@@ -9,6 +9,9 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     success: bool
     message: str
+    user_id: int | None = None
+    role: str | None = None
+    profile_exists: bool = False
 
 
 class SignupRequest(BaseModel):
@@ -21,3 +24,6 @@ class SignupRequest(BaseModel):
 class SignupResponse(BaseModel):
     success: bool
     message: str
+    user_id: int | None = None
+    role: str | None = None
+    profile_exists: bool = False

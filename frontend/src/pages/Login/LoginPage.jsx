@@ -91,14 +91,14 @@ export default function LoginPage({ onLogin }) {
         />
 
         <div className={authStyles.metaRow}>
-          <label className={authStyles.checkboxRow}>
+          {/* <label className={authStyles.checkboxRow}>
             <input name="rememberMe" type="checkbox" checked={formData.rememberMe} onChange={handleChange} />
             <span>Remember Me</span>
-          </label>
+          </label> */}
 
-          <button type="button" className={authStyles.forgotLink}>
+          {/* <button type="button" className={authStyles.forgotLink}>
             Forgot Password?
-          </button>
+          </button> */}
         </div>
 
         <Button
