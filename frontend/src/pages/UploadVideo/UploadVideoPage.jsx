@@ -82,7 +82,8 @@ export default function UploadVideoPage() {
     setUploadError('');
 
     try {
-      const response = await uploadVideo(selectedFile);
+      const currentUserId = window.sessionStorage.getItem('currentUserId');
+      const response = await uploadVideo(selectedFile, currentUserId);
 
       const uploadData = {
         videoId: response.video_id,
@@ -92,6 +93,7 @@ export default function UploadVideoPage() {
 
       sessionStorage.setItem('uploadSuccessData', JSON.stringify(uploadData));
       sessionStorage.setItem('uploadedVideoId', response.video_id);
+      sessionStorage.setItem('uploadedVideoName', selectedFile.name);
 
       navigate('/upload-success');
     } catch (error) {

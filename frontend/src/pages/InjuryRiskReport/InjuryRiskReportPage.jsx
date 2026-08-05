@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/Button/Button';
+import { downloadReportPdf } from '../../utils/reportPdf';
 import styles from './InjuryRiskReportPage.module.css';
 
 function getRiskDetails(riskLevel) {
@@ -113,6 +114,13 @@ function formatRiskScore(value) {
 export default function InjuryRiskReportPage() {
   const navigate = useNavigate();
   const [report, setReport] = useState(null);
+  const [downloadMessage, setDownloadMessage] = useState('');
+
+  const athleteName = window.sessionStorage.getItem('currentUserName')
+    || window.sessionStorage.getItem('athleteName')
+    || window.sessionStorage.getItem('profileName')
+    || 'Current Athlete';
+  const videoName = window.sessionStorage.getItem('uploadedVideoName') || 'Uploaded Video';
 
   useEffect(() => {
     const cached = window.sessionStorage.getItem('poseAnalysis');
@@ -140,17 +148,39 @@ export default function InjuryRiskReportPage() {
   }, [navigate]);
 
   const recommendations = useMemo(() => {
-    if (!report?.recommendations || !Array.isArray(report.recommendations)) {
+    const rawRecommendations = report?.recommendations ?? [];
+
+    if (!Array.isArray(rawRecommendations)) {
       return [];
     }
 
-    return report.recommendations.filter((item) => {
-      if (item === null || item === undefined) {
-        return false;
-      }
+    return rawRecommendations
+      .filter((item) => {
+        if (item === null || item === undefined) {
+          return false;
+        }
 
-      return String(item).trim() !== '';
-    });
+        if (typeof item === 'string') {
+          return item.trim() !== '';
+        }
+
+        if (typeof item === 'object') {
+          return Boolean(item?.title || item?.description);
+        }
+
+        return false;
+      })
+      .map((item) => {
+        if (typeof item === 'string') {
+          return { key: item.trim(), text: item.trim() };
+        }
+
+        const title = typeof item?.title === 'string' ? item.title.trim() : '';
+        const description = typeof item?.description === 'string' ? item.description.trim() : '';
+        const text = title && description ? `${title}: ${description}` : title || description;
+
+        return { key: title || description || 'recommendation', text };
+      });
   }, [report]);
 
   const riskDetails = useMemo(() => getRiskDetails(report?.injury_risk), [report?.injury_risk]);
@@ -162,6 +192,21 @@ export default function InjuryRiskReportPage() {
   const framesProcessed = report?.frames_processed ?? report?.pose_data?.length ?? 'Not available';
   const duration = report?.duration ?? report?.metadata?.duration ?? 'Not available';
   const processingStatus = formatStatus(report?.status);
+
+  const handleDownloadReport = () => {
+    if (!report) {
+      setDownloadMessage('No injury report is available yet. Complete an analysis first.');
+      return;
+    }
+
+    try {
+      downloadReportPdf(report, athleteName, videoName);
+      setDownloadMessage('Report downloaded successfully.');
+    } catch (error) {
+      console.error('InjuryRiskReportPage: failed to download report', error);
+      setDownloadMessage('Unable to download the report right now.');
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -241,9 +286,9 @@ export default function InjuryRiskReportPage() {
               {recommendations.length ? (
                 <ul className={styles.recommendationList}>
                   {recommendations.map((item) => (
-                    <li key={item}>
+                    <li key={item.key}>
                       <span className={styles.checkIcon}>✓</span>
-                      <span>{item}</span>
+                      <span>{item.text}</span>
                     </li>
                   ))}
                 </ul>
@@ -253,6 +298,9 @@ export default function InjuryRiskReportPage() {
             </div>
 
             <div className={styles.actions}>
+              <Button type="button" variant="secondary" disabled={!report} onClick={handleDownloadReport}>
+                Download Report
+              </Button>
               <Button type="button" variant="secondary" onClick={() => navigate('/biomechanical-analysis')}>
                 Back to Analysis
               </Button>
@@ -260,6 +308,7 @@ export default function InjuryRiskReportPage() {
                 Back to Dashboard
               </Button>
             </div>
+            {downloadMessage ? <p className={styles.downloadMessage}>{downloadMessage}</p> : null}
           </>
         )}
       </section>

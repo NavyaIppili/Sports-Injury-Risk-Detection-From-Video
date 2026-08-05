@@ -284,6 +284,12 @@
   gap: 12px;
 }
 
+.downloadMessage {
+  margin: 12px 0 0;
+  color: #4c7ce0;
+  font-weight: 600;
+}
+
 @media (max-width: 780px) {
   .card {
     padding: 24px;

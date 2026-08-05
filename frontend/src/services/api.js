@@ -1,6 +1,20 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8001';
 const DEFAULT_TIMEOUT_MS = 3000;
 
+function getCurrentUserIdFromSession() {
+  const currentUserId = window.sessionStorage.getItem('currentUserId');
+  if (!currentUserId) {
+    return null;
+  }
+
+  return currentUserId;
+}
+
+function buildAuthHeaders() {
+  const currentUserId = getCurrentUserIdFromSession();
+  return currentUserId ? { 'X-Current-User-Id': String(currentUserId) } : {};
+}
+
 async function apiRequest(path, options = {}) {
   let response;
   const controller = new AbortController();
@@ -16,6 +30,7 @@ async function apiRequest(path, options = {}) {
     response = await fetch(`${API_BASE_URL}${path}`, {
       headers: {
         'Content-Type': 'application/json',
+        ...buildAuthHeaders(),
         ...(options.headers ?? {}),
       },
       signal: controller.signal,
@@ -85,15 +100,19 @@ export function updateAthleteProfile(userId, profile) {
   });
 }
 
-export async function uploadVideo(file) {
+export async function uploadVideo(file, userId = null) {
   const formData = new FormData();
   formData.append('video', file);
+  if (userId) {
+    formData.append('user_id', String(userId));
+  }
 
   let response;
 
   try {
     response = await fetch(`${API_BASE_URL}/api/v1/videos/upload`, {
       method: 'POST',
+      headers: buildAuthHeaders(),
       body: formData,
     });
   } catch {
@@ -120,5 +139,18 @@ export async function getPoseResult(videoId) {
   return apiRequest(`/api/v1/pose-result/${videoId}`, { 
     method: 'GET',
     timeout: 30000
+  });
+}
+
+export function saveAnalysisHistory(payload) {
+  return apiRequest('/api/v1/analysis-history', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAnalysisHistory(userId) {
+  return apiRequest(`/api/v1/analysis-history/${encodeURIComponent(userId)}`, {
+    method: 'GET',
   });
 }

@@ -9,7 +9,7 @@ export default function Navbar({ onLogout }) {
         <Logo className={styles.brandLogo} size={48} />
         <div>
           <p className={styles.kicker}>Sports Injury Risk Detection</p>
-          <h1 className={styles.title}>Athlete Profile Dashboard</h1>
+          <h1 className={styles.title}>Athlete Dashboard</h1>
         </div>
       </div>
       <Button variant="secondary" onClick={onLogout}>

@@ -41,12 +41,11 @@ def select_sampled_frame_numbers(
         return [sampled[0]]
 
     if sample_interval > 1:
-        # Downsample the `sampled` list by taking floor-based indices so that
-        # selections are stable and predictable.
+        # Downsample the already-sampled frames while keeping both endpoints.
         selected: List[int] = []
         n = len(sampled)
         for i in range(max_frames):
-            idx = int((i * n) / max_frames)
+            idx = int(round(i * (n - 1) / (max_frames - 1)))
             if idx >= n:
                 idx = n - 1
             frame_number = sampled[idx]
@@ -93,6 +92,7 @@ def save_uploaded_video(upload_file) -> dict:
     return {
         'video_id': video_id,
         'filename': destination_path.name,
+        'original_filename': filename,
         'status': 'uploaded',
         'filepath': str(destination_path.relative_to(Path(__file__).resolve().parent.parent.parent)).replace('\\', '/'),
     }

@@ -32,17 +32,6 @@ function ReportIcon() {
   );
 }
 
-function PoseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" role="img" aria-label="Pose icon">
-      <circle cx="12" cy="7.5" r="2.75" />
-      <path d="M8.5 11.5c.5-1.4 1.9-2.4 3.5-2.4s3 1 3.5 2.4" />
-      <path d="M10 14.25h4" />
-      <path d="M8.75 18.25h6.5" />
-    </svg>
-  );
-}
-
 const athleteCards = [
   {
     icon: <UserIcon />,
@@ -66,11 +55,11 @@ const athleteCards = [
     route: '/analysis-history',
   },
   {
-    icon: <PoseIcon />,
-    title: 'Pose Estimation',
-    description: 'View detected body joints, skeleton tracking, and pose landmarks extracted from uploaded sports videos.',
-    actionLabel: 'View Pose Results',
-    route: '/pose-estimation-results',
+    icon: <ReportIcon />,
+    title: 'Athlete Intelligence Dashboard',
+    description: 'Review the latest injury risk summary, issues, recommendations, and previous analyses in one place.',
+    actionLabel: 'Open Dashboard',
+    route: '/athlete-intelligence-dashboard',
   },
 ];
 
@@ -97,6 +86,10 @@ export default function DashboardPage({ role = '', onLogout }) {
   const navigate = useNavigate();
   const normalizedRole = role.toLowerCase();
   const isAthlete = normalizedRole === 'athlete';
+  const displayName = typeof window !== 'undefined'
+    ? (window.sessionStorage.getItem('currentUserName') || window.sessionStorage.getItem('athleteName') || window.sessionStorage.getItem('profileName') || '').trim()
+    : '';
+  const dashboardTitle = displayName ? `${displayName}'s Dashboard` : 'Dashboard';
 
   if (!isAthlete) {
     return (
@@ -128,14 +121,14 @@ export default function DashboardPage({ role = '', onLogout }) {
             </div>
             <div>
               <p className={styles.brandName}>Sports Injury Risk Detection</p>
-              <p className={styles.brandSubtitle}>Athlete Dashboard</p>
+              <p className={styles.brandSubtitle}>{dashboardTitle}</p>
             </div>
           </div>
         </header>
 
         <section className={styles.welcomeCard}>
           <div className={styles.welcomeContent}>
-            <h2>Welcome Back, Athlete 👋</h2>
+            <h2>{displayName ? `Welcome Back, ${displayName} 👋` : 'Welcome Back 👋'}</h2>
             <p>Manage your athlete profile, upload sports videos, and track your injury analysis progress.</p>
           </div>
         </section>

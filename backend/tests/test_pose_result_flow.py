@@ -62,10 +62,11 @@ def test_adds_default_risk_and_recommendations_when_missing_from_result_json(iso
     result = pose_service.get_pose_result('abc123')
 
     assert result['injury_risk'] == 'low'
-    assert result['recommendations'] == [
-        'Movement pattern appears stable.',
-        'Continue maintaining current technique.',
-    ]
+    assert result['recommendations'] == [{
+        'title': 'Maintain Current Form',
+        'description': 'No significant movement issues detected. Continue training with proper technique.',
+        'priority': 'Low',
+    }]
 
 
 def test_generates_risk_and_recommendations_from_analysis_metrics(isolated_pose_paths):

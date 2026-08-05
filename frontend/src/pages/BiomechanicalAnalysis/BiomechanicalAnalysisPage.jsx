@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/Button/Button';
-import { getPoseResult } from '../../services/api';
+import { getPoseResult, saveAnalysisHistory } from '../../services/api';
 import styles from './BiomechanicalAnalysisPage.module.css';
 
 const allowedMetrics = [
@@ -97,6 +97,7 @@ export default function BiomechanicalAnalysisPage() {
   const [error, setError] = useState('');
 
   const videoId = window.sessionStorage.getItem('uploadedVideoId');
+  const currentUserId = window.sessionStorage.getItem('currentUserId');
 
   useEffect(() => {
     const cachedAnalysis = window.sessionStorage.getItem('poseAnalysis');
@@ -143,6 +144,24 @@ export default function BiomechanicalAnalysisPage() {
           setAnalysis(result);
           console.log('BiomechanicalAnalysisPage: Data saved to sessionStorage', result);
           window.sessionStorage.setItem('poseAnalysis', JSON.stringify(result));
+          if (currentUserId) {
+            try {
+              await saveAnalysisHistory({
+                user_id: Number(currentUserId),
+                video_id: result?.video_id || videoId,
+                video_name: window.sessionStorage.getItem('uploadedVideoName') || null,
+                risk_score: result?.risk_score ?? result?.riskScore ?? null,
+                risk_level: result?.injury_risk || result?.risk_level || null,
+                detected_issues: Array.isArray(result?.detected_issues) ? result.detected_issues : [],
+                recommendations: Array.isArray(result?.recommendations) ? result.recommendations : [],
+                frames_processed: result?.frames_processed ?? result?.metadata?.total_frames ?? null,
+                video_duration: result?.duration ?? result?.metadata?.duration ?? null,
+                analysis_time: new Date().toISOString(),
+              });
+            } catch (historyError) {
+              console.warn('BiomechanicalAnalysisPage: failed to save history', historyError);
+            }
+          }
           setLoading(false);
           clearInterval(interval);
           return;

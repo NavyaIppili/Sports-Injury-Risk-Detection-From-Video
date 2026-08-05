@@ -11,6 +11,7 @@ class LoginResponse(BaseModel):
     message: str
     user_id: int | None = None
     role: str | None = None
+    full_name: str | None = None
     profile_exists: bool = False
 
 
@@ -26,4 +27,5 @@ class SignupResponse(BaseModel):
     message: str
     user_id: int | None = None
     role: str | None = None
+    full_name: str | None = None
     profile_exists: bool = False

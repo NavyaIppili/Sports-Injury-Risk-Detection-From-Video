@@ -2,6 +2,7 @@ import json
 import os
 import time
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 
 import cv2
@@ -16,9 +17,13 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 from services.pose_estimator import run_pose_estimation
-from fastapi import APIRouter, File, HTTPException, UploadFile, status, BackgroundTasks
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status, BackgroundTasks
 
+from app.crud.analysis_history import save_analysis_history
+from app.database.database import SessionLocal
+from app.schemas.analysis_history import AnalysisHistoryCreate
 from app.services.biomechanics import build_analysis_summary
+from app.services.injury_prediction import _normalize_issues
 from app.services.video_service import save_uploaded_video, UPLOAD_DIR, select_sampled_frame_numbers
 from app.services.risk_scoring import score_risk
 from app.services.recommendations import build_recommendations
@@ -31,7 +36,7 @@ POSE_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 router = APIRouter(prefix='/videos', tags=['videos'])
 
 
-def _process_video_background(video_path: Path, video_id: str) -> None:
+def _process_video_background(video_path: Path, video_id: str, user_id: str | None = None, video_name: str | None = None) -> None:
     logger.info(f'[BACKGROUND TASK] Pose estimation started for {video_id}')
     print(f'Pose estimation started for {video_id}')
     total_start = time.perf_counter()
@@ -144,6 +149,11 @@ def _process_video_background(video_path: Path, video_id: str) -> None:
 
         scoring = score_risk(analysis) if isinstance(analysis, dict) else {'risk_score': 0, 'injury_risk': 'low', 'issues': []}
         recommendations = build_recommendations(analysis, scoring['issues']) if isinstance(analysis, dict) else []
+        detected_issues = _normalize_issues(scoring.get('issues', [])) if isinstance(analysis, dict) else []
+        total_issues_detected = len(detected_issues) if detected_issues is not None else None
+        balance_score = analysis.get('average_balance_score') if isinstance(analysis, dict) else None
+        stability_score = analysis.get('posture_stability') if isinstance(analysis, dict) else None
+        pose_quality_score = analysis.get('pose_quality_score') if isinstance(analysis, dict) else None
         movement_quality = {
             'knee_valgus': 'knee_valgus' in scoring['issues'],
             'excessive_torso_lean': 'excessive_torso_lean' in scoring['issues'],
@@ -168,6 +178,11 @@ def _process_video_background(video_path: Path, video_id: str) -> None:
             'risk_score': scoring['risk_score'],
             'injury_risk': scoring['injury_risk'],
             'recommendations': recommendations,
+            'detected_issues': detected_issues,
+            'total_issues_detected': total_issues_detected,
+            'balance_score': balance_score,
+            'stability_score': stability_score,
+            'pose_quality_score': pose_quality_score,
         }
 
         output_path = POSE_RESULTS_DIR / f'{video_id}.json'
@@ -194,6 +209,33 @@ def _process_video_background(video_path: Path, video_id: str) -> None:
         print(f'JSON Save Time: {json_save_time:.3f}s')
         print(f'Total Processing Time: {total_time:.3f}s')
 
+        if user_id:
+            try:
+                with SessionLocal() as db:
+                    save_analysis_history(
+                        db=db,
+                        payload=AnalysisHistoryCreate(
+                            user_id=int(user_id),
+                            video_id=video_id,
+                            video_name=video_name,
+                            risk_score=float(scoring.get('risk_score', 0) or 0),
+                            risk_level=scoring.get('injury_risk') or 'low',
+                            balance_score=balance_score,
+                            stability_score=stability_score,
+                            pose_quality_score=pose_quality_score,
+                            total_issues=len(scoring.get('issues', []) or []),
+                            total_issues_detected=total_issues_detected,
+                            detected_issues=detected_issues,
+                            recommendations=recommendations if recommendations else None,
+                            frames_processed=total_frames,
+                            duration=duration,
+                            processing_status='Completed',
+                            analysis_time=datetime.now(timezone.utc),
+                        ),
+                    )
+            except Exception as history_error:
+                logger.warning(f'[BACKGROUND TASK] Unable to save history for {video_id}: {history_error}')
+
         logger.info(f'[BACKGROUND TASK] Pose estimation finished for {video_id}')
         logger.info(f'[BACKGROUND TASK] Analysis completed for {video_id}')
         print('Pose estimation finished for', video_id)
@@ -209,7 +251,7 @@ def _process_video_background(video_path: Path, video_id: str) -> None:
 
 
 @router.post('/upload')
-def upload_video(video: UploadFile = File(...), background_tasks: BackgroundTasks = None) -> dict:
+def upload_video(video: UploadFile = File(...), user_id: str | None = Form(default=None), background_tasks: BackgroundTasks = None) -> dict:
     try:
         upload_start = time.perf_counter()
         result = save_uploaded_video(video)
@@ -227,7 +269,7 @@ def upload_video(video: UploadFile = File(...), background_tasks: BackgroundTask
         if background_tasks is not None:
             video_path = UPLOAD_DIR / result.get('filename')
             logger.info(f'[UPLOAD] Scheduling background task for {result.get("video_id")} from {video_path}')
-            background_tasks.add_task(_process_video_background, video_path, result.get('video_id'))
+            background_tasks.add_task(_process_video_background, video_path, result.get('video_id'), user_id, result.get('original_filename') or result.get('filename'))
             logger.info(f'[UPLOAD] Background task scheduled')
 
         return result
