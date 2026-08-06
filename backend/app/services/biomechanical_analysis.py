@@ -51,6 +51,35 @@ def _summarize_series(values: Sequence[float]) -> Dict[str, Optional[float]]:
     }
 
 
+def _compute_pose_quality_score(
+    average_balance: Optional[float],
+    posture_stability: Optional[float],
+    average_torso_lean: Optional[float],
+    average_shoulder_alignment_delta: Optional[float],
+) -> Optional[float]:
+    if average_balance is None and posture_stability is None and average_torso_lean is None and average_shoulder_alignment_delta is None:
+        return None
+
+    quality_components: List[float] = []
+
+    if average_balance is not None:
+        quality_components.append(max(0.0, min(100.0, average_balance)))
+    if posture_stability is not None:
+        quality_components.append(max(0.0, min(100.0, posture_stability)))
+
+    if average_torso_lean is not None:
+        quality_components.append(max(0.0, min(100.0, 100.0 - average_torso_lean * 1.5)))
+    else:
+        quality_components.append(50.0)
+
+    if average_shoulder_alignment_delta is not None:
+        quality_components.append(max(0.0, min(100.0, 100.0 - average_shoulder_alignment_delta * 200.0)))
+    else:
+        quality_components.append(50.0)
+
+    return round(mean(quality_components), 2)
+
+
 def _compute_side_metrics(frame_landmarks: Sequence[Dict[str, Any]]) -> Dict[str, Optional[float]]:
     left_hip = _find_landmark(frame_landmarks, 'LEFT_HIP')
     left_knee = _find_landmark(frame_landmarks, 'LEFT_KNEE')
@@ -133,5 +162,12 @@ def build_analysis_summary(pose_data: Sequence[Dict[str, Any]]) -> Dict[str, Any
         'hip_asymmetry': round(abs((_safe_average(left_hip_values) or 0.0) - (_safe_average(right_hip_values) or 0.0)), 2),
         'posture_stability': round(max(0.0, 100.0 - (abs(_safe_average(torso_lean_values) or 0.0) * 1.5 + abs(_safe_average(shoulder_delta_values) or 0.0) * 40.0)), 2),
     }
+    analysis['stability_score'] = analysis['posture_stability']
+    analysis['pose_quality_score'] = _compute_pose_quality_score(
+        analysis['average_balance_score'],
+        analysis['posture_stability'],
+        analysis['average_torso_lean'],
+        analysis['average_shoulder_alignment_delta'],
+    )
 
     return analysis

@@ -50,8 +50,10 @@ function mapApiProfileToForm(profile) {
 
 export default function AthleteProfilePage({ userId, profileSaved, onSaveProfile }) {
   const [formData, setFormData] = useState(initialFormState);
+  const [savedFormData, setSavedFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
   const [localStatus, setLocalStatus] = useState('');
+  const resolvedUserId = userId ?? window.sessionStorage.getItem('currentUserId');
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -65,22 +67,26 @@ export default function AthleteProfilePage({ userId, profileSaved, onSaveProfile
     let isMounted = true;
 
     async function loadProfile() {
-      if (!userId || !profileSaved) {
+      if (!resolvedUserId) {
         setFormData(initialFormState);
+        setSavedFormData(initialFormState);
         setLocalStatus('');
         return;
       }
 
       try {
-        const profile = await getAthleteProfile(userId);
+        const profile = await getAthleteProfile(resolvedUserId);
         if (!isMounted) return;
 
-        setFormData(mapApiProfileToForm(profile));
+        const nextFormData = mapApiProfileToForm(profile);
+        setFormData(nextFormData);
+        setSavedFormData(nextFormData);
         setLocalStatus('Loaded saved profile. You can update your details below.');
       } catch (error) {
         if (!isMounted) return;
 
         setFormData(initialFormState);
+        setSavedFormData(initialFormState);
         setLocalStatus(error.message || 'Unable to load saved profile details.');
       }
     }
@@ -90,12 +96,12 @@ export default function AthleteProfilePage({ userId, profileSaved, onSaveProfile
     return () => {
       isMounted = false;
     };
-  }, [profileSaved, userId]);
+  }, [profileSaved, resolvedUserId]);
 
   const handleReset = () => {
-    setFormData(initialFormState);
+    setFormData(savedFormData);
     setErrors({});
-    setLocalStatus('Form reset locally.');
+    setLocalStatus('Form reset to the last saved values.');
   };
 
   const handleSubmit = async (event) => {

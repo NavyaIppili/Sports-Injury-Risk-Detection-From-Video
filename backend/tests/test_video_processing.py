@@ -19,4 +19,4 @@ def test_select_sampled_frame_numbers_with_sample_interval():
     assert sampled[0] == 1
     assert sampled[-1] == 96
     assert len(sampled) == 10
-    assert sampled == [1, 11, 21, 31, 41, 51, 61, 71, 81, 91]
+    assert sampled == [1, 11, 21, 31, 41, 56, 66, 76, 86, 96]

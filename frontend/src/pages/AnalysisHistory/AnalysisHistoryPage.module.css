@@ -34,6 +34,39 @@
   color: var(--slate-700);
 }
 
+.statusBox {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  color: var(--slate-700);
+}
+
+.tableWrap {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.historyTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.historyTable th,
+.historyTable td {
+  padding: 0.8rem 0.6rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+  text-align: left;
+}
+
+.historyTable th {
+  font-size: 0.82rem;
+  color: var(--slate-600);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 @media (max-width: 640px) {
   .layout {
     padding: 1rem;

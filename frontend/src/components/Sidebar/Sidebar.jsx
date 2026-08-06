@@ -12,7 +12,7 @@ export default function Sidebar({ active = 'profile' }) {
     <aside className={styles.sidebar}>
       <div className={styles.sidebarCard}>
         <p className={styles.cardLabel}>Workspace</p>
-        <h2 className={styles.heading}>Athlete Operations</h2>
+        <h2 className={styles.heading}>Dashboard Operations</h2>
         <p className={styles.description}>Profile data is stored locally for this milestone and will later connect to prediction services.</p>
       </div>
       <nav className={styles.nav} aria-label="Profile sections">

@@ -31,6 +31,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse
         message='Login successful.',
         user_id=user.user_id,
         role=user.role,
+        full_name=user.full_name,
         profile_exists=profile_exists,
     )
 
@@ -48,5 +49,6 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)) -> SignupRespo
         message='Account created successfully.',
         user_id=user.user_id,
         role=user.role,
+        full_name=user.full_name,
         profile_exists=False,
     )

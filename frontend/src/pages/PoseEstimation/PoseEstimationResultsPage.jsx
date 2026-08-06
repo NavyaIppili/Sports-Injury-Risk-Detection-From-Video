@@ -98,19 +98,6 @@ export default function PoseEstimationResultsPage() {
           </p>
         </section>
 
-        <section className={styles.visualCard}>
-          <div className={styles.visualHeader}>
-            <h2>Skeleton Visualization</h2>
-            <p>Upload and analyze a video to view detected pose landmarks and skeletal tracking results.</p>
-          </div>
-          <div className={styles.placeholder}>
-            <div>
-              <p className={styles.placeholderTitle}>Upload and analyze a video to view detected pose landmarks and skeletal tracking results.</p>
-              <p className={styles.placeholderText}>The extracted landmarks will appear here once the pose output is available.</p>
-            </div>
-          </div>
-        </section>
-
         <div className={styles.actions}>
           <Button type="button" variant="secondary" onClick={() => navigate('/dashboard')}>
             Back to Dashboard
