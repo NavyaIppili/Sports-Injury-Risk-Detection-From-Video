@@ -146,7 +146,6 @@ function getMetricEntries(report) {
     ['shoulder_alignment', 'Shoulder Alignment'],
     ['torso_lean', 'Torso Lean'],
     ['balance_score', 'Balance Score'],
-    ['stability_score', 'Stability Score'],
     ['stride_length', 'Stride Length'],
     ['pose_quality_score', 'Pose Quality Score'],
   ];
@@ -230,7 +229,7 @@ function formatDate(value) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true,
+    hour12: false,
   });
 }
 
@@ -317,19 +316,6 @@ function getDetectedIssues(report) {
   if (movementQuality.poor_squat_depth === true) issueEntries.push('Poor squat depth detected');
 
   return issueEntries;
-}
-
-function getAnalysisDate(report) {
-  const dateValue = report?.timestamp
-    ?? report?.created_at
-    ?? report?.metadata?.processed_at
-    ?? report?.analysis?.timestamp
-    ?? getValueAtPath(report, ['analysis', 'analysis_time'])
-    ?? getValueAtPath(report, ['analysis', 'analysisTime'])
-    ?? report?.analysis_time
-    ?? report?.analysisTime;
-
-  return formatDate(dateValue) || 'N/A';
 }
 
 function buildAnalysisSummaryLines(report) {
@@ -441,7 +427,6 @@ function buildMinimalPdf(pages) {
 function buildAthleteDetailsLines(report, athleteName, videoName) {
   const displayAthlete = getDisplayValue(athleteName, 'N/A');
   const displayVideo = getDisplayValue(videoName, 'N/A');
-  const analysisDate = getDisplayValue(getAnalysisDate(report), 'N/A');
   const duration = getDisplayValue(report?.duration ?? report?.metadata?.duration ?? report?.analysis?.duration, 'N/A');
   const framesProcessed = getDisplayValue(
     report?.frames_processed ?? report?.analysis?.frames_processed ?? report?.metadata?.total_frames ?? report?.pose_data?.length,
@@ -457,36 +442,39 @@ function buildAthleteDetailsLines(report, athleteName, videoName) {
       { x: 430, text: displayVideo, fontSize: 10 },
     ]),
     createLine([
-      { x: 72, text: 'Analysis Date:', fontSize: 10 },
-      { x: 170, text: analysisDate, fontSize: 10 },
-      { x: 360, text: 'Video Duration:', fontSize: 10 },
-      { x: 450, text: duration, fontSize: 10 },
+      { x: 72, text: 'Video Duration:', fontSize: 10 },
+      { x: 170, text: duration, fontSize: 10 },
+      { x: 360, text: 'Frames Processed:', fontSize: 10 },
+      { x: 450, text: framesProcessed, fontSize: 10 },
     ]),
     createLine([
-      { x: 72, text: 'Frames Processed:', fontSize: 10 },
-      { x: 170, text: framesProcessed, fontSize: 10 },
-      { x: 360, text: 'Processing Status:', fontSize: 10 },
-      { x: 450, text: processingStatus, fontSize: 10 },
+      { x: 72, text: 'Processing Status:', fontSize: 10 },
+      { x: 170, text: processingStatus, fontSize: 10 },
     ]),
   ];
 }
 
 function buildRiskSummaryLines(report, detectedIssues, poseQualityScore) {
-  const riskScore = report?.risk_score ?? report?.riskScore;
-  const riskScoreText = riskScore === null || riskScore === undefined || riskScore === '' ? 'N/A' : `${Number(riskScore).toFixed(2)}/100`;
+  const riskScore = getNumericReportValue(report, [
+    ['risk_score'],
+    ['riskScore'],
+  ]);
+  const riskScoreText = riskScore === undefined ? 'N/A' : `${riskScore.toFixed(2)}/100`;
   const riskLevel = normalizeRiskLevel(report?.injury_risk || report?.risk_level);
   const issuesCount = detectedIssues.length;
-  const balanceScore = report?.analysis?.average_balance_score ?? report?.analysis?.balance_score ?? report?.balance_score;
-  const stabilityScore = report?.analysis?.posture_stability ?? report?.analysis?.stability_score ?? report?.stability_score;
-  const balanceText = balanceScore === null || balanceScore === undefined || balanceScore === '' ? 'N/A' : Number(balanceScore).toFixed(2);
-  const stabilityText = stabilityScore === null || stabilityScore === undefined || stabilityScore === '' ? 'N/A' : Number(stabilityScore).toFixed(2);
-  const poseQualityText = poseQualityScore === null || poseQualityScore === undefined || poseQualityScore === '' ? 'N/A' : Number(poseQualityScore).toFixed(2);
+  const balanceScore = getNumericReportValue(report, [
+    ['analysis', 'average_balance_score'],
+    ['analysis', 'balance_score'],
+    ['balance_score'],
+  ]);
+  const balanceText = balanceScore === undefined ? 'N/A' : balanceScore.toFixed(2);
+  const poseQualityText = poseQualityScore === undefined ? 'N/A' : poseQualityScore.toFixed(2);
 
   return [
     createLine([{ x: 72, text: 'Risk Score:', fontSize: 10 }, { x: 150, text: riskScoreText, fontSize: 18 }, { x: 360, text: 'Risk Level:', fontSize: 10 }, { x: 430, text: riskLevel, fontSize: 14 }]),
     '',
-    createLine([{ x: 72, text: 'Balance Score', fontSize: 10 }, { x: 170, text: balanceText, fontSize: 12 }, { x: 360, text: 'Stability Score', fontSize: 10 }, { x: 460, text: stabilityText, fontSize: 12 }]),
-    createLine([{ x: 72, text: 'Pose Quality Score', fontSize: 10 }, { x: 170, text: poseQualityText, fontSize: 12 }, { x: 360, text: 'Issues Detected', fontSize: 10 }, { x: 460, text: String(issuesCount), fontSize: 12 }]),
+    createLine([{ x: 72, text: 'Balance Score', fontSize: 10 }, { x: 170, text: balanceText, fontSize: 12 }, { x: 360, text: 'Pose Quality Score', fontSize: 10 }, { x: 470, text: poseQualityText, fontSize: 12 }]),
+    createLine([{ x: 72, text: 'Issues Detected', fontSize: 10 }, { x: 170, text: String(issuesCount), fontSize: 12 }]),
   ];
 }
 

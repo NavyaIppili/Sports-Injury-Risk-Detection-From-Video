@@ -76,7 +76,8 @@ def _extract_landmarks(result: Any) -> List[Dict[str, Any]]:
         return []
 
     point_arrays = []
-    for attribute in ('xy', 'xyn', 'data'):
+    # Prefer normalized coordinates because downstream scoring assumes a 0..1 scale.
+    for attribute in ('xyn', 'xy', 'data'):
         candidate = getattr(keypoints, attribute, None)
         point_array = _coerce_array(candidate)
         if point_array is None:

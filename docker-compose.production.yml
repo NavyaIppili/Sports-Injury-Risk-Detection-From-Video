@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: sports-injury-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-username}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-this-password}
+      POSTGRES_DB: ${DB_NAME:-sports_injury_risk_detection}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-username}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sports-injury-network
+    # Do not expose database port in production unless behind firewall
+    # ports:
+    #   - "5432:5432"
+
+  # Backend FastAPI Service
+  backend:
+    image: sports-injury-backend:latest
+    container_name: sports-injury-backend
+    restart: always
+    environment:
+      APP_NAME: ${APP_NAME:-Sports Injury Risk Detection API}
+      APP_ENV: ${APP_ENV:-production}
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      DATABASE_URL: postgresql://${DB_USER:-username}:${DB_PASSWORD:-change-this-password}@db:5432/${DB_NAME:-sports_injury_risk_detection}
+      SECRET_KEY: ${SECRET_KEY:-change-this-secret-key-in-production}
+      VIDEO_SAMPLE_INTERVAL: ${VIDEO_SAMPLE_INTERVAL:-5}
+      LOGIN_EMAIL: ${LOGIN_EMAIL:-athlete@example.com}
+      AUTO_CREATE_TABLES: ${AUTO_CREATE_TABLES:-true}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/extracted_frames:/app/extracted_frames
+      - ./backend/pose_results:/app/pose_results
+    networks:
+      - sports-injury-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Backend service - can be behind reverse proxy or accessed directly
+    expose:
+      - "8000"
+    # If using Nginx reverse proxy on same server, don't expose directly
+    # Uncomment below to expose to host
+    # ports:
+    #   - "8000:8000"
+
+  # Frontend Nginx Service
+  frontend:
+    image: sports-injury-frontend:latest
+    container_name: sports-injury-frontend
+    restart: always
+    environment:
+      BACKEND_URL: http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - sports-injury-network
+    ports:
+      - "80:8080"
+      - "443:8443"
+    volumes:
+      # Optional: mount SSL certificates if using HTTPS
+      # - ./certs:/etc/nginx/certs:ro
+      - ./logs/nginx:/var/log/nginx
+
+  # Optional: Nginx Reverse Proxy (if more complex routing needed)
+  # reverse-proxy:
+  #   image: nginx:alpine
+  #   restart: always
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx-prod.conf:/etc/nginx/nginx.conf:ro
+  #     - ./certs:/etc/nginx/certs:ro
+  #   depends_on:
+  #     - frontend
+  #     - backend
+  #   networks:
+  #     - sports-injury-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  sports-injury-network:
+    driver: bridge

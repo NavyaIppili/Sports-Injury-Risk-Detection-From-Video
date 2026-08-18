@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAnalysisHistory } from '../../services/api';
 import styles from './AnalysisHistoryPage.module.css';
 
 export default function AnalysisHistoryPage() {
+  const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -82,7 +84,18 @@ export default function AnalysisHistoryPage() {
               </thead>
               <tbody>
                 {rows.map((item) => (
-                  <tr key={item.history_id ?? item.analysis_id}>
+                  <tr
+                    key={item.history_id ?? item.analysis_id}
+                    className={styles.clickableRow}
+                    onClick={() => navigate('/injury-risk-report', { state: { analysisData: item } })}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        navigate('/injury-risk-report', { state: { analysisData: item } });
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                  >
                     <td>{item.analysis_time ? new Date(item.analysis_time).toLocaleString() : new Date(item.created_at).toLocaleString()}</td>
                     <td>{item.video_name || item.video_id || 'N/A'}</td>
                     <td>{item.risk_score ?? 'No data available'}</td>

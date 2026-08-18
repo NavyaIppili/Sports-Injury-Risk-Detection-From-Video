@@ -8,6 +8,7 @@ from app.routes.videos import router as videos_router
 from app.routes.pose import router as pose_router
 from app.routes.injury_prediction import router as injury_prediction_router
 from app.routes.analysis_history import router as analysis_history_router
+from app.routes.dashboard import router as dashboard_router
 from app.database.database import create_tables
 
 app = FastAPI(
@@ -31,6 +32,7 @@ app.include_router(videos_router, prefix='/api/v1')
 app.include_router(pose_router)
 app.include_router(injury_prediction_router)
 app.include_router(analysis_history_router)
+app.include_router(dashboard_router)
 
 
 @app.on_event('startup')

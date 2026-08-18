@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: sports-injury-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-username}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-sports_injury_risk_detection}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-username}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sports-injury-network
+
+  # Backend FastAPI Service
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: sports-injury-backend
+    environment:
+      APP_NAME: ${APP_NAME:-Sports Injury Risk Detection API}
+      APP_ENV: ${APP_ENV:-production}
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      DATABASE_URL: postgresql://${DB_USER:-username}:${DB_PASSWORD:-password}@db:5432/${DB_NAME:-sports_injury_risk_detection}
+      SECRET_KEY: ${SECRET_KEY:-change-this-later}
+      VIDEO_SAMPLE_INTERVAL: ${VIDEO_SAMPLE_INTERVAL:-5}
+      LOGIN_EMAIL: ${LOGIN_EMAIL:-athlete@example.com}
+      AUTO_CREATE_TABLES: ${AUTO_CREATE_TABLES:-true}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/extracted_frames:/app/extracted_frames
+      - ./backend/pose_results:/app/pose_results
+    networks:
+      - sports-injury-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Frontend Nginx Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sports-injury-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - sports-injury-network
+
+volumes:
+  postgres_data:
+
+networks:
+  sports-injury-network:
+    driver: bridge

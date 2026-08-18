@@ -119,13 +119,37 @@ def get_pose_result(video_id: str) -> Dict[str, Any]:
         'pose_data': pose_data,
     }
 
+    analysis_timestamp = (
+        data.get('analysis_time')
+        or data.get('analysis_date')
+        or metadata.get('processed_at')
+    )
+    if analysis_timestamp:
+        payload['analysis_time'] = analysis_timestamp
+        payload['analysis_date'] = analysis_timestamp
+        payload['timestamp'] = analysis_timestamp
+
     # Include analysis and additional fields only when processing completed
     if status == 'completed':
         raw_analysis = data.get('analysis')
         analysis = _normalize_analysis(raw_analysis or build_analysis_summary(pose_data), pose_data)
+        if analysis_timestamp:
+            analysis['analysis_time'] = analysis_timestamp
+            analysis['analysis_date'] = analysis_timestamp
         payload['analysis'] = analysis
         payload['biomechanical_analysis'] = analysis.get('biomechanical_analysis', analysis)
         payload['movement_quality'] = analysis.get('movement_quality', {})
+        payload['balance_score'] = data.get('balance_score') if data.get('balance_score') is not None else analysis.get('average_balance_score')
+        payload['stability_score'] = data.get('stability_score') if data.get('stability_score') is not None else analysis.get('posture_stability')
+        payload['pose_quality_score'] = data.get('pose_quality_score') if data.get('pose_quality_score') is not None else analysis.get('pose_quality_score')
+        if data.get('metric_availability') is not None:
+            payload['metric_availability'] = data.get('metric_availability')
+        elif analysis.get('metric_availability') is not None:
+            payload['metric_availability'] = analysis.get('metric_availability')
+        if data.get('detected_issues') is not None:
+            payload['detected_issues'] = data.get('detected_issues')
+        if data.get('total_issues_detected') is not None:
+            payload['total_issues_detected'] = data.get('total_issues_detected')
 
         if 'injury_risk' in data:
             payload['injury_risk'] = data.get('injury_risk')

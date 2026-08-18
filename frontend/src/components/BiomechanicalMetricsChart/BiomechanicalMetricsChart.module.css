@@ -1,0 +1,55 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.emptyState {
+  padding: 1rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.metricItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metricHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metricLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.metricValue {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.metricBarContainer {
+  height: 2rem;
+  background: #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.metricBar {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.4s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.5rem;
+}

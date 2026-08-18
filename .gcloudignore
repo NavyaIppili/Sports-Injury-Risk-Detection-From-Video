@@ -1,0 +1,70 @@
+# .gcloudignore file for Google Cloud Build
+# Files and directories to exclude from deployment
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Node modules and build artifacts
+node_modules
+frontend/node_modules
+frontend/dist
+frontend/.vite
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+backend/.venv
+venv
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Test files
+backend/tests
+*.test.js
+*.spec.js
+
+# Documentation
+README.md
+docs/
+wireframes/
+*.md
+
+# CI/CD
+.github
+.gitlab-ci.yml
+
+# Database
+*.db
+sports_injury_detection.db
+
+# Temporary files
+tmp_check.py
+tmp_pdf_test.mjs
+temp/
+.DS_Store
+
+# Environment files (will use secrets)
+.env
+.env.local
+.env.*.local
+
+# Docker related
+docker-compose.yml
+docker-compose.*.yml
+.docker
+
+# Large files
+yolov8n-pose.pt
+
+# Logs
+logs/
+*.log

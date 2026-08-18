@@ -37,3 +37,5 @@ def test_run_pose_estimation_accepts_numpy_keypoint_arrays(tmp_path, monkeypatch
 
     assert result['pose_data'][0]['landmarks'][0]['name'] == 'NOSE'
     assert result['pose_data'][0]['landmarks'][0]['visibility'] == 0.95
+    assert 0.0 <= result['pose_data'][0]['landmarks'][0]['x'] <= 1.0
+    assert 0.0 <= result['pose_data'][0]['landmarks'][0]['y'] <= 1.0

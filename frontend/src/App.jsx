@@ -16,6 +16,15 @@ import Navbar from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
 import { createAthleteProfile, getAthleteProfile, loginUser, signupUser, updateAthleteProfile } from './services/api';
 
+function getDashboardTitle(role) {
+  const normalizedRole = (role || '').toLowerCase();
+  if (!normalizedRole) {
+    return 'Dashboard';
+  }
+
+  return `${normalizedRole.replace(/-/g, ' ')} Dashboard`.replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function PrivateRoute({ isAuthenticated, children }) {
   const location = useLocation();
 
@@ -208,7 +217,7 @@ export default function App() {
         element={
           <PrivateRoute isAuthenticated={isAuthenticated}>
             <div className="app-shell">
-              <Navbar onLogout={appActions.logout} />
+              <Navbar onLogout={appActions.logout} title={getDashboardTitle(currentRole)} subtitle={currentUserName ? `Signed in as ${currentUserName}` : ''} />
               <main className="app-shell__content">
                 <DashboardPage role={currentRole} onLogout={appActions.logout} />
               </main>

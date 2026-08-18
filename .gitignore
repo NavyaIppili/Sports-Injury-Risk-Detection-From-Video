@@ -1,26 +1,116 @@
+# ================================
 # Python
+# ================================
 .venv/
 venv/
+env/
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
-# Database
-*.db
-
-# Environment
+# ================================
+# Environment / Secrets
+# ================================
 .env
+.env.*
+!.env.example
 
-# Uploads and generated files
+# Google Cloud credentials / config
+.gcloud/
+*.json
+
+# ================================
+# Database
+# ================================
+*.db
+*.sqlite
+*.sqlite3
+
+# ================================
+# Uploads / Generated Files
+# ================================
 backend/uploads/
+uploads/
+*.tmp
+*.temp
 
-# Model weights
+# ================================
+# Machine Learning Model Files
+# ================================
 *.pt
+*.pth
+*.onnx
+*.h5
+*.pkl
+*.joblib
 
-# Frontend
+# ================================
+# Node / React
+# ================================
 node_modules/
+frontend/node_modules/
+
 dist/
 build/
+frontend/dist/
+frontend/build/
 
-# OS
-.DS_Store
+.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ================================
+# Testing / Coverage
+# ================================
+coverage/
+.nyc_output/
+
+# ================================
+# Docker
+# ================================
+docker-compose.override.yml
+
+# ================================
+# Google Cloud / Deployment
+# ================================
+.gcloudignore
+
+# ================================
+# IDE / Editor
+# ================================
+.vscode/
+.idea/
+
+*.swp
+*.swo
+*~
+
+# ================================
+# Windows
+# ================================
 Thumbs.db
+Desktop.ini
+
+# ================================
+# macOS
+# ================================
+.DS_Store
+
+# ================================
+# Logs
+# ================================
+*.log
+
+# ================================
+# Temporary files
+# ================================
+*.bak
+*.tmp
+*.temp

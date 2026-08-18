@@ -23,6 +23,7 @@ test('buildReportPdfData includes the current athlete report details', () => {
   assert.ok(data.sections.some((section) => section.title === 'Recommendations'));
   assert.ok(data.content.includes('Athlete Name: Maya Chen'));
   assert.ok(data.content.includes('Video Name: Warmup Session'));
+  assert.ok(!data.content.includes('Analysis Date:'));
   assert.ok(data.content.includes('Risk Score: 88.50/100'));
   assert.ok(data.content.includes('Risk Level: High Risk'));
   assert.ok(data.content.includes('Left Knee Angle'));
@@ -39,7 +40,6 @@ test('buildReportPdfData keeps missing values explicit and includes summary sect
     frames_processed: 240,
     analysis: {
       balance_score: 0,
-      stability_score: null,
       pose_quality_score: 78.5,
       left_knee_angle: { average: 90, minimum: 80, maximum: 100, std_dev: 5 },
       right_knee_angle: 92,
@@ -53,7 +53,9 @@ test('buildReportPdfData keeps missing values explicit and includes summary sect
   assert.ok(data.content.includes('Risk Score: 87.04/100'));
   assert.ok(data.content.includes('Risk Level: Medium Risk'));
   assert.ok(data.content.includes('Balance Score'));
-  assert.ok(data.content.includes('Stability Score'));
+  assert.ok(data.content.includes('Pose Quality Score'));
+  assert.ok(!data.content.includes('Stability Score'));
+  assert.ok(!data.content.includes('Analysis Date:'));
   assert.ok(data.content.includes('N/A'));
   assert.ok(data.sections.some((section) => section.title === 'Detected Issues'));
   assert.ok(data.sections.some((section) => section.title === 'Recommendations'));

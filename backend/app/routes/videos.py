@@ -41,9 +41,6 @@ def _process_video_background(video_path: Path, video_id: str, user_id: str | No
     print(f'Pose estimation started for {video_id}')
     total_start = time.perf_counter()
     cap = cv2.VideoCapture(str(video_path))
-    if not cap.isOpened():
-        logger.error(f'[BACKGROUND TASK] Unable to open uploaded video file for {video_id}')
-        raise RuntimeError('Unable to open uploaded video file.')
 
     frame_extraction_time = 0.0
     pose_estimation_time = 0.0
@@ -51,6 +48,10 @@ def _process_video_background(video_path: Path, video_id: str, user_id: str | No
     json_save_time = 0.0
 
     try:
+        if not cap.isOpened():
+            logger.error(f'[BACKGROUND TASK] Unable to open uploaded video file for {video_id}')
+            raise RuntimeError('Unable to open uploaded video file.')
+
         fps = cap.get(cv2.CAP_PROP_FPS) or 0.0
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
         duration = total_frames / fps if fps else 0.0
@@ -110,15 +111,33 @@ def _process_video_background(video_path: Path, video_id: str, user_id: str | No
             frame_extraction_time = time.perf_counter() - frame_extraction_start
             # If no valid frames were detected, write a completed JSON with guidance
             if not pose_data:
+                analysis_completed_at = datetime.now(timezone.utc)
+                analysis_timestamp = analysis_completed_at.isoformat()
                 output_path = POSE_RESULTS_DIR / f'{video_id}.json'
                 output_data = {
                     'status': 'completed',
                     'video_id': video_id,
+                    'analysis_time': analysis_timestamp,
+                    'analysis_date': analysis_timestamp,
+                    'metadata': {
+                        'fps': fps,
+                        'duration': duration,
+                        'total_frames': total_frames,
+                        'processed_at': analysis_timestamp,
+                    },
                     'pose_data': [],
                     'analysis': {},
                     'keypoints': [],
                     'biomechanical_analysis': {},
                     'injury_risk': 'unknown',
+                    'balance_score': None,
+                    'stability_score': None,
+                    'pose_quality_score': None,
+                    'metric_availability': {
+                        'balance_score': {'status': 'unavailable', 'reason': 'No pose landmarks detected.'},
+                        'stability_score': {'status': 'unavailable', 'reason': 'No pose landmarks detected.'},
+                        'pose_quality_score': {'status': 'unavailable', 'reason': 'No pose landmarks detected.'},
+                    },
                     'recommendations': ['No pose detected in the uploaded video.'],
                 }
                 try:
@@ -154,6 +173,12 @@ def _process_video_background(video_path: Path, video_id: str, user_id: str | No
         balance_score = analysis.get('average_balance_score') if isinstance(analysis, dict) else None
         stability_score = analysis.get('posture_stability') if isinstance(analysis, dict) else None
         pose_quality_score = analysis.get('pose_quality_score') if isinstance(analysis, dict) else None
+        analysis_completed_at = datetime.now(timezone.utc)
+        analysis_timestamp = analysis_completed_at.isoformat()
+
+        if isinstance(analysis, dict):
+            analysis['analysis_time'] = analysis_timestamp
+            analysis['analysis_date'] = analysis_timestamp
         movement_quality = {
             'knee_valgus': 'knee_valgus' in scoring['issues'],
             'excessive_torso_lean': 'excessive_torso_lean' in scoring['issues'],
@@ -165,10 +190,13 @@ def _process_video_background(video_path: Path, video_id: str, user_id: str | No
         output_data = {
             'status': 'completed',
             'video_id': video_id,
+            'analysis_time': analysis_timestamp,
+            'analysis_date': analysis_timestamp,
             'metadata': {
                 'fps': fps,
                 'duration': duration,
                 'total_frames': total_frames,
+                'processed_at': analysis_timestamp,
             },
             'pose_data': pose_data,
             'analysis': analysis,
@@ -183,6 +211,7 @@ def _process_video_background(video_path: Path, video_id: str, user_id: str | No
             'balance_score': balance_score,
             'stability_score': stability_score,
             'pose_quality_score': pose_quality_score,
+            'metric_availability': analysis.get('metric_availability') if isinstance(analysis, dict) else None,
         }
 
         output_path = POSE_RESULTS_DIR / f'{video_id}.json'
@@ -230,7 +259,7 @@ def _process_video_background(video_path: Path, video_id: str, user_id: str | No
                             frames_processed=total_frames,
                             duration=duration,
                             processing_status='Completed',
-                            analysis_time=datetime.now(timezone.utc),
+                            analysis_time=analysis_completed_at,
                         ),
                     )
             except Exception as history_error:

@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Button from '../../components/Button/Button';
+import RiskScoreGauge from '../../components/RiskScoreGauge/RiskScoreGauge';
+import BiomechanicalMetricsChart from '../../components/BiomechanicalMetricsChart/BiomechanicalMetricsChart';
+import RiskTrendChart from '../../components/RiskTrendChart/RiskTrendChart';
 import { downloadReportPdf } from '../../utils/reportPdf';
+import { getAnalysisHistory } from '../../services/api';
 import styles from './InjuryRiskReportPage.module.css';
 
 function getRiskDetails(riskLevel) {
@@ -111,18 +115,53 @@ function formatRiskScore(value) {
   return `${roundedValue}/100`;
 }
 
+function formatAnalysisDate(dateString) {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  } catch {
+    return dateString;
+  }
+}
+
 export default function InjuryRiskReportPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [report, setReport] = useState(null);
+  const [historyData, setHistoryData] = useState([]);
   const [downloadMessage, setDownloadMessage] = useState('');
+  const [isHistorical, setIsHistorical] = useState(false);
 
   const athleteName = window.sessionStorage.getItem('currentUserName')
     || window.sessionStorage.getItem('athleteName')
     || window.sessionStorage.getItem('profileName')
     || 'Current Athlete';
   const videoName = window.sessionStorage.getItem('uploadedVideoName') || 'Uploaded Video';
+  const currentUserId = window.sessionStorage.getItem('currentUserId');
 
   useEffect(() => {
+    // First, try to get data from navigation state (from Previous Analyses)
+    const stateData = location.state?.analysisData;
+    if (stateData) {
+      console.log('InjuryRiskReportPage: Loading data from navigation state', stateData);
+      setReport(stateData);
+      setIsHistorical(true);
+      // Load full history for trend chart
+      if (currentUserId) {
+        loadAnalysisHistory(currentUserId);
+      }
+      return;
+    }
+
+    // Fall back to sessionStorage (from new analysis flow)
     const cached = window.sessionStorage.getItem('poseAnalysis');
     console.log('InjuryRiskReportPage: sessionStorage poseAnalysis raw value', cached);
 
@@ -137,6 +176,11 @@ export default function InjuryRiskReportPage() {
       console.log('InjuryRiskReportPage: Data loaded from sessionStorage', parsed);
       if (parsed?.status === 'completed') {
         setReport(parsed);
+        setIsHistorical(false);
+        // Load full history for trend chart
+        if (currentUserId) {
+          loadAnalysisHistory(currentUserId);
+        }
         return;
       }
     } catch (error) {
@@ -145,7 +189,18 @@ export default function InjuryRiskReportPage() {
     }
 
     navigate('/upload-video', { replace: true });
-  }, [navigate]);
+  }, [navigate, location, currentUserId]);
+
+  async function loadAnalysisHistory(userId) {
+    try {
+      const entries = await getAnalysisHistory(userId);
+      if (Array.isArray(entries)) {
+        setHistoryData(entries);
+      }
+    } catch (error) {
+      console.log('InjuryRiskReportPage: Could not load history for trend chart', error);
+    }
+  }
 
   const recommendations = useMemo(() => {
     const rawRecommendations = report?.recommendations ?? [];
@@ -221,6 +276,15 @@ export default function InjuryRiskReportPage() {
 
         {!report ? null : (
           <>
+            {(report?.analysis_time || report?.created_at) && (
+              <div className={styles.analysisDateSection}>
+                <p className={styles.analysisDateLabel}>Analysis Date</p>
+                <p className={styles.analysisDateValue}>
+                  {formatAnalysisDate(report.analysis_time || report.created_at)}
+                </p>
+              </div>
+            )}
+
             <div className={`${styles.riskCard} ${riskDetails.className}`}>
               <div className={styles.riskBadge}>
                 <span className={styles.riskLabel}>Risk Level</span>
@@ -232,6 +296,38 @@ export default function InjuryRiskReportPage() {
               {riskScore ? <p className={styles.riskScore}>Risk Score: {riskScore}</p> : null}
               <p className={styles.riskDescription}>{riskDescription}</p>
             </div>
+
+            <div className={styles.visualizationsGrid}>
+              <div className={styles.visualizationCard}>
+                <div className={styles.sectionHeading}>
+                  <h3>Risk Score Gauge</h3>
+                  <p>Current injury risk assessment.</p>
+                </div>
+                <RiskScoreGauge score={report?.risk_score} riskLevel={riskLabel} />
+              </div>
+
+              <div className={styles.visualizationCard}>
+                <div className={styles.sectionHeading}>
+                  <h3>Biomechanical Metrics</h3>
+                  <p>Movement quality scores from analysis.</p>
+                </div>
+                <BiomechanicalMetricsChart
+                  balanceScore={report?.balance_score}
+                  stabilityScore={report?.stability_score}
+                  poseQualityScore={report?.pose_quality_score}
+                />
+              </div>
+            </div>
+
+            {historyData && historyData.length > 0 && (
+              <div className={styles.trendSection}>
+                <div className={styles.sectionHeading}>
+                  <h3>Risk Trend</h3>
+                  <p>Your risk score progression over time.</p>
+                </div>
+                <RiskTrendChart analyses={historyData} />
+              </div>
+            )}
 
             <div className={styles.detectedIssuesCard}>
               <div className={styles.sectionHeading}>
