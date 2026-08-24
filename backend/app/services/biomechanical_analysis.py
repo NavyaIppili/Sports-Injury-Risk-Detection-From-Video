@@ -80,6 +80,22 @@ def _compute_pose_quality_score(
     return round(mean(quality_components), 2)
 
 
+def _compute_posture_stability(
+    average_torso_lean: Optional[float],
+    average_shoulder_alignment_delta: Optional[float],
+) -> Optional[float]:
+    if average_torso_lean is None and average_shoulder_alignment_delta is None:
+        return None
+
+    penalty = 0.0
+    if average_torso_lean is not None:
+        penalty += abs(average_torso_lean) * 1.5
+    if average_shoulder_alignment_delta is not None:
+        penalty += abs(average_shoulder_alignment_delta) * 40.0
+
+    return round(max(0.0, 100.0 - penalty), 2)
+
+
 def _compute_side_metrics(frame_landmarks: Sequence[Dict[str, Any]]) -> Dict[str, Optional[float]]:
     left_hip = _find_landmark(frame_landmarks, 'LEFT_HIP')
     left_knee = _find_landmark(frame_landmarks, 'LEFT_KNEE')
@@ -140,6 +156,11 @@ def build_analysis_summary(pose_data: Sequence[Dict[str, Any]]) -> Dict[str, Any
     shoulder_delta_values = [m.get('shoulder_alignment_delta') for m in metrics_by_frame if isinstance(m.get('shoulder_alignment_delta'), (int, float))]
     stride_values = [m.get('stride_length') for m in metrics_by_frame if isinstance(m.get('stride_length'), (int, float))]
 
+    posture_stability = _compute_posture_stability(
+        _safe_average(torso_lean_values),
+        _safe_average(shoulder_delta_values),
+    )
+
     analysis: Dict[str, Any] = {
         'frames_analyzed': len(metrics_by_frame),
         'average_left_knee_angle': _safe_average(left_knee_values),
@@ -160,7 +181,7 @@ def build_analysis_summary(pose_data: Sequence[Dict[str, Any]]) -> Dict[str, Any
         'stride_length': _summarize_series(stride_values),
         'knee_asymmetry': round(abs((_safe_average(left_knee_values) or 0.0) - (_safe_average(right_knee_values) or 0.0)), 2),
         'hip_asymmetry': round(abs((_safe_average(left_hip_values) or 0.0) - (_safe_average(right_hip_values) or 0.0)), 2),
-        'posture_stability': round(max(0.0, 100.0 - (abs(_safe_average(torso_lean_values) or 0.0) * 1.5 + abs(_safe_average(shoulder_delta_values) or 0.0) * 40.0)), 2),
+        'posture_stability': posture_stability,
     }
     analysis['stability_score'] = analysis['posture_stability']
     analysis['pose_quality_score'] = _compute_pose_quality_score(
@@ -169,5 +190,20 @@ def build_analysis_summary(pose_data: Sequence[Dict[str, Any]]) -> Dict[str, Any
         analysis['average_torso_lean'],
         analysis['average_shoulder_alignment_delta'],
     )
+
+    analysis['metric_availability'] = {
+        'balance_score': {
+            'status': 'computed' if analysis['average_balance_score'] is not None else 'unavailable',
+            'reason': None if analysis['average_balance_score'] is not None else 'Insufficient landmarks for balance score (requires shoulders and ankles).',
+        },
+        'stability_score': {
+            'status': 'computed' if analysis['posture_stability'] is not None else 'unavailable',
+            'reason': None if analysis['posture_stability'] is not None else 'Insufficient landmarks for stability score (requires torso lean or shoulder alignment inputs).',
+        },
+        'pose_quality_score': {
+            'status': 'computed' if analysis['pose_quality_score'] is not None else 'unavailable',
+            'reason': None if analysis['pose_quality_score'] is not None else 'Insufficient biomechanical data for pose quality score.',
+        },
+    }
 
     return analysis

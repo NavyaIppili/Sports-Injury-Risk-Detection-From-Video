@@ -290,9 +290,68 @@
   font-weight: 600;
 }
 
+.downloadMessage {
+  margin: 12px 0 0;
+  color: #4c7ce0;
+  font-weight: 600;
+}
+
+.analysisDateSection {
+  margin-top: 16px;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #f8fbff 100%);
+  border: 1px solid #cfe9ff;
+  border-radius: 16px;
+}
+
+.analysisDateLabel {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4b7bb5;
+}
+
+.analysisDateValue {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0d3b79;
+}
+
+.visualizationsGrid {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.visualizationCard {
+  background: #fdfefe;
+  border: 1px solid #e7eefc;
+  border-radius: 20px;
+  padding: 22px 24px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+.trendSection {
+  margin-top: 24px;
+  background: #fdfefe;
+  border: 1px solid #e7eefc;
+  border-radius: 20px;
+  padding: 22px 24px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
 @media (max-width: 780px) {
   .card {
     padding: 24px;
+  }
+
+  .visualizationsGrid {
+    grid-template-columns: 1fr;
   }
 
   .summaryGrid {

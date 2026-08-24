@@ -67,6 +67,20 @@
   letter-spacing: 0.06em;
 }
 
+.clickableRow {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clickableRow:hover {
+  background-color: rgba(191, 219, 254, 0.3);
+}
+
+.clickableRow:focus {
+  outline: 2px solid var(--blue-600, #2563eb);
+  outline-offset: -2px;
+}
+
 @media (max-width: 640px) {
   .layout {
     padding: 1rem;

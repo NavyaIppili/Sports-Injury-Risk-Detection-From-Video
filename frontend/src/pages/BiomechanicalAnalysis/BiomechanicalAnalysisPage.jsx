@@ -152,11 +152,14 @@ export default function BiomechanicalAnalysisPage() {
                 video_name: window.sessionStorage.getItem('uploadedVideoName') || null,
                 risk_score: result?.risk_score ?? result?.riskScore ?? null,
                 risk_level: result?.injury_risk || result?.risk_level || null,
+                balance_score: result?.analysis?.average_balance_score ?? result?.balance_score ?? null,
+                stability_score: result?.analysis?.posture_stability ?? result?.stability_score ?? null,
+                pose_quality_score: result?.analysis?.pose_quality_score ?? result?.pose_quality_score ?? null,
                 detected_issues: Array.isArray(result?.detected_issues) ? result.detected_issues : [],
                 recommendations: Array.isArray(result?.recommendations) ? result.recommendations : [],
                 frames_processed: result?.frames_processed ?? result?.metadata?.total_frames ?? null,
-                video_duration: result?.duration ?? result?.metadata?.duration ?? null,
-                analysis_time: new Date().toISOString(),
+                duration: result?.duration ?? result?.metadata?.duration ?? null,
+                analysis_time: result?.analysis_time ?? result?.analysis_date ?? result?.timestamp ?? result?.metadata?.processed_at ?? null,
               });
             } catch (historyError) {
               console.warn('BiomechanicalAnalysisPage: failed to save history', historyError);

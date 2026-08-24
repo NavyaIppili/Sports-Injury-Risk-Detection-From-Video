@@ -1,0 +1,37 @@
+# Backend Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    ffmpeg \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY backend/requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy backend application
+COPY backend/app ./app
+COPY backend/alembic ./alembic
+COPY backend/alembic.ini .
+COPY backend/yolov8n-pose.pt .
+
+# Create necessary directories for uploads
+RUN mkdir -p uploads/videos uploads/pose_results extracted_frames pose_results
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Run uvicorn server
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

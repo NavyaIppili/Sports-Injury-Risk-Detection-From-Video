@@ -190,7 +190,7 @@ export default function AthleteIntelligenceDashboardPage() {
             frames_processed: result?.frames_processed ?? result?.metadata?.total_frames ?? null,
             duration: result?.duration ?? result?.metadata?.duration ?? null,
             processing_status: 'Completed',
-            analysis_time: new Date().toISOString(),
+            analysis_time: result?.analysis_time ?? result?.analysis_date ?? result?.timestamp ?? result?.metadata?.processed_at ?? null,
           });
           setLoading(false);
           clearInterval(intervalId);
@@ -365,7 +365,14 @@ export default function AthleteIntelligenceDashboardPage() {
   const processingStatus = isValueAvailable(report?.status)
     ? String(report.status).charAt(0).toUpperCase() + String(report.status).slice(1)
     : null;
-  const analysisTimestamp = report?.timestamp || report?.created_at || report?.metadata?.processed_at || null;
+  const analysisTimestamp = report?.analysis_time
+    || report?.analysis_date
+    || report?.timestamp
+    || report?.analysis?.analysis_time
+    || report?.analysis?.analysis_date
+    || report?.created_at
+    || report?.metadata?.processed_at
+    || null;
   const analysisTime = formatDateTime(analysisTimestamp);
 
   const overviewItems = [

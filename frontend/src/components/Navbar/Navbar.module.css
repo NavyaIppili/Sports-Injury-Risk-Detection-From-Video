@@ -36,3 +36,9 @@
   font-size: 1.15rem;
   color: var(--slate-900);
 }
+
+.subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--slate-500);
+}

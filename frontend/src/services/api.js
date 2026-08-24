@@ -154,3 +154,9 @@ export function getAnalysisHistory(userId) {
     method: 'GET',
   });
 }
+
+export function getDashboardSummary() {
+  return apiRequest('/api/v1/dashboard/summary', {
+    method: 'GET',
+  });
+}

@@ -33,7 +33,7 @@ def test_returns_completed_payload_when_result_json_exists(isolated_pose_paths):
     (uploads_dir / 'abc123_video.mp4').write_bytes(b'data')
     result_path = pose_dir / 'abc123.json'
     result_path.write_text(
-        '{"status": "completed", "video_id": "abc123", "pose_data": [{"landmarks": []}], "metadata": {"fps": 30, "duration": 5.0, "total_frames": 1}, "injury_risk": "low", "recommendations": ["Keep your shoulders level."]}',
+        '{"status": "completed", "video_id": "abc123", "analysis_time": "2026-08-06T10:15:00+00:00", "analysis_date": "2026-08-06T10:15:00+00:00", "pose_data": [{"landmarks": []}], "metadata": {"fps": 30, "duration": 5.0, "total_frames": 1, "processed_at": "2026-08-06T10:15:00+00:00"}, "injury_risk": "low", "recommendations": ["Keep your shoulders level."], "balance_score": 83.4, "stability_score": 79.2, "pose_quality_score": 81.3}',
         encoding='utf-8',
     )
 
@@ -48,6 +48,11 @@ def test_returns_completed_payload_when_result_json_exists(isolated_pose_paths):
     assert result['landmarks_detected'] == 0
     assert result['injury_risk'] == 'low'
     assert result['recommendations'] == ['Keep your shoulders level.']
+    assert result['analysis_time'] == '2026-08-06T10:15:00+00:00'
+    assert result['analysis_date'] == '2026-08-06T10:15:00+00:00'
+    assert result['balance_score'] == 83.4
+    assert result['stability_score'] == 79.2
+    assert result['pose_quality_score'] == 81.3
 
 
 def test_adds_default_risk_and_recommendations_when_missing_from_result_json(isolated_pose_paths):
